@@ -434,12 +434,15 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
         Docutils does not promote subtitles, so this might never be called.
         However, we keep it here in case some future version will change this behaviour.
         """
+        print("#############")
+        print("visit_subtitle", self.status.section_level)
+        print("#############")
         self._push_context(TitleContext(self.status.section_level + 1))  # pragma: no cover
 
     @pushing_context
     def visit_rubric(self, _node):
         """Sphinx Rubric, a heading without relation to the document sectioning"""
-        self._push_context(TitleContext(3))
+        self._push_context(TitleContext(2))
 
     def visit_transition(self, _node):
         """Simply replace a transition by a horizontal rule."""
@@ -517,7 +520,7 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
     ###############################################################################
 
     def _start_list(self, marker: Union[int, str]):
-        self.ensure_eol()
+        self.ensure_eol(2)
         if isinstance(marker, str) and marker[-1] != " ":
             marker += " "
         self._push_status(list_marker=ListMarker(marker))
@@ -580,8 +583,8 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
         # We don't want methods to be at the same level as classes,
         # If signature has a non-null class, that's means it is a signature
         # of a class method
-        h_level = 4 if node.get("class", None) else 3
-        self._push_context(TitleContext(h_level))
+        h_level = 3 if node.get("class", None) else 2
+        self._push_context(TitleContext(h_level, anchor=node.get("ids", [])[0]))
 
     def visit_desc_parameterlist(self, _node):
         self._push_context(WrappedContext("(", ")", wrap_empty=True))
