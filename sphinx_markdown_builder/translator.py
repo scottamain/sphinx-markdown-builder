@@ -25,9 +25,11 @@ https://github.com/docutils/docutils/blob/master/docutils/docutils/writers/html5
 import dataclasses
 import posixpath
 import re
+import yaml
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 from docutils import languages, nodes
+from munch import munchify
 from sphinx.util.docutils import SphinxTranslator
 
 from sphinx_markdown_builder.contexts import (
@@ -118,6 +120,9 @@ def pushing_context(method):
 
 
 class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-methods
+    visited_title = False
+    popped_title = False
+    title = None
     def __init__(self, document: nodes.document, builder: "MarkdownBuilder"):
         super().__init__(document, builder)
         self.builder: "MarkdownBuilder" = builder
@@ -264,6 +269,19 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
     ################################################################################
     # visit/depart handlers
     ################################################################################
+
+    def visit_document(self, node):
+        self.title = getattr(self.builder, 'current_doc_name')
+
+    def depart_document(self, node):
+        variables = munchify({
+            'title': self.title
+        })
+        variables_yaml = yaml.safe_dump(variables)
+        frontmatter = '---\n' + variables_yaml + '---\n\n'
+        frontmatter_ctx = SubContext()
+        frontmatter_ctx.add(frontmatter)
+        self._ctx_queue.insert(0, frontmatter_ctx)
 
     @pushing_context
     def visit_warning(self, _node):
@@ -422,11 +440,19 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
 
     @pushing_context
     def visit_title(self, _node):
+        if not self.visited_title:
+            self.title = _node.astext()
+            self.visited_title = True
         if isinstance(self.ctx, TableContext):
             level = 4
         else:
             level = self.status.section_level
         self._push_context(TitleContext(level))
+
+    def depart_title(self, _node):
+        if self.visited_title and not self.popped_title:
+            self.popped_title = True
+            self._ctx_queue.pop()
 
     @pushing_context
     def visit_subtitle(self, _node):
@@ -434,15 +460,12 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
         Docutils does not promote subtitles, so this might never be called.
         However, we keep it here in case some future version will change this behaviour.
         """
-        print("#############")
-        print("visit_subtitle", self.status.section_level)
-        print("#############")
         self._push_context(TitleContext(self.status.section_level + 1))  # pragma: no cover
 
     @pushing_context
     def visit_rubric(self, _node):
         """Sphinx Rubric, a heading without relation to the document sectioning"""
-        self._push_context(TitleContext(2))
+        self._push_context(TitleContext(3))
 
     def visit_transition(self, _node):
         """Simply replace a transition by a horizontal rule."""
