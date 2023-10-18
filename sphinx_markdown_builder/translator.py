@@ -66,8 +66,8 @@ PREDEFINED_ELEMENTS: Dict[str, Union[PushContext, SKIP, None]] = dict(  # pylint
     superscript=SubscriptContext,
     desc_annotation=ItalicContext,
     literal_strong=StrongContext,
-    literal_emphasis=ItalicContext,
-    field_name=PushContext(WrappedContext, "**", ":**"),  # e.g 'returns', 'parameters'
+    literal_emphasis=PushContext(WrappedContext, "", ""),
+    field_name=PushContext(WrappedContext, "**", ":**\n\n"),  # e.g 'returns', 'parameters'
     # Doc info elements
     docinfo=DocInfoContext,
     docinfo_item=DocInfoContext,
@@ -434,9 +434,6 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
         Docutils does not promote subtitles, so this might never be called.
         However, we keep it here in case some future version will change this behaviour.
         """
-        print("#############")
-        print("visit_subtitle", self.status.section_level)
-        print("#############")
         self._push_context(TitleContext(self.status.section_level + 1))  # pragma: no cover
 
     @pushing_context
@@ -575,16 +572,27 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
     def visit_desc_signature(self, node):
         """the main signature of class/method"""
 
-        # Insert anchors if enabled by the config
-        if self.config.markdown_anchor_signatures:
-            for anchor in node.get("ids", []):
-                self._add_anchor(anchor)
-
         # We don't want methods to be at the same level as classes,
         # If signature has a non-null class, that's means it is a signature
         # of a class method
         h_level = 3 if node.get("class", None) else 2
-        self._push_context(TitleContext(h_level, anchor=node.get("ids", [])[0]))
+        title = TitleContext(h_level)
+
+        # Insert HTML anchors if enabled by the config
+        if self.config.markdown_anchor_signatures:
+            for anchor in node.get("ids", []):
+                self._add_anchor(anchor)
+
+        # Insert Docusaurus-style MD anchors if enabled by the config
+        if self.config.markdown_anchor_signatures_docusaurus and node.get("ids", []):
+          title.set_anchor(node.get("ids", [])[0])
+
+        self._push_context(title)
+
+    @pushing_context
+    def visit_desc_signature_line(self, node):
+        """A node sometimes nested in the main signature of class/method"""
+        self._push_context(SubContext())
 
     def visit_desc_parameterlist(self, _node):
         self._push_context(WrappedContext("(", ")", wrap_empty=True))

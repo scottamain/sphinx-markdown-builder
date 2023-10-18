@@ -306,25 +306,22 @@ class NoLineBreakContext(SubContext):
 
 
 class TitleContext(NoLineBreakContext):
-    def __init__(self, level: int, params=SubContextParams(2, 2), anchor: str = ""):
+    def __init__(self, level: int, params=SubContextParams(2, 2)):
         super().__init__("<br/>", params)
         self.level = level
-        self.anchor = anchor
+        self.anchor = ""
+
+    def set_anchor(self, anchor: str):
+        self.anchor = f" {{#{anchor}}}"
 
     @property
     def section_prefix(self):
         return "#" * self.level
 
-    @property
-    def section_suffix(self):
-        if not self.anchor:
-            return
-        return f"{{#{escape_html_quote(self.anchor)}}}"
-
     def make(self):
         content = super().make()
         assert len(content) > 0, "Empty title"
-        return f"{self.section_prefix} {content} {self.section_suffix}"
+        return f"{self.section_prefix} {content}{self.anchor}"
 
 
 class MetaContext(NoLineBreakContext):
