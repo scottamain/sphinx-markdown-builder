@@ -583,9 +583,13 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
             for anchor in node.get("ids", []):
                 self._add_anchor(anchor)
 
-        # Insert Docusaurus-style MD anchors if enabled by the config
+        # Insert Docusaurus-style MD anchors if enabled in config
         if self.config.markdown_anchor_signatures_docusaurus and node.get("ids", []):
-          title.set_anchor(node.get("ids", [])[0])
+            title.set_anchor(node.get("ids", [])[0])
+
+        # Use short headings (followed by long version) if enabled in config
+        if self.config.markdown_short_heading_names and node.get("_toc_name"):
+            title.set_short_name(node.get("_toc_name", ""))
 
         self._push_context(title)
 

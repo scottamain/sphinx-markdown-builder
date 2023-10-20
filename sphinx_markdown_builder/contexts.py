@@ -310,9 +310,13 @@ class TitleContext(NoLineBreakContext):
         super().__init__("<br/>", params)
         self.level = level
         self.anchor = ""
+        self.short_name = ""
 
     def set_anchor(self, anchor: str):
         self.anchor = f" {{#{anchor}}}"
+
+    def set_short_name(self, name: str):
+        self.short_name = name.split('.')[-1]
 
     @property
     def section_prefix(self):
@@ -321,6 +325,9 @@ class TitleContext(NoLineBreakContext):
     def make(self):
         content = super().make()
         assert len(content) > 0, "Empty title"
+        if self.short_name:
+          return f"{self.section_prefix} {self.short_name}{self.anchor}\n\n" \
+                 f"> {content}\n\n"
         return f"{self.section_prefix} {content}{self.anchor}"
 
 
