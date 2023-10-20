@@ -25,9 +25,11 @@ https://github.com/docutils/docutils/blob/master/docutils/docutils/writers/html5
 import dataclasses
 import posixpath
 import re
+import yaml
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 from docutils import languages, nodes
+from munch import munchify
 from sphinx.util.docutils import SphinxTranslator
 
 from sphinx_markdown_builder.contexts import (
@@ -264,6 +266,16 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
     ################################################################################
     # visit/depart handlers
     ################################################################################
+
+    def visit_document(self, node):
+        if self.config.markdown_wrapper_class:
+          variables = munchify({
+              'wrapper_class': self.config.markdown_wrapper_class
+          })
+          variables_yaml = yaml.safe_dump(variables)
+          frontmatter_ctx = SubContext()
+          frontmatter_ctx.add('---\n' + variables_yaml + '---\n\n')
+          self._push_context(frontmatter_ctx)
 
     @pushing_context
     def visit_warning(self, _node):
@@ -588,8 +600,10 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
             title.set_anchor(node.get("ids", [])[0])
 
         # Use short headings (followed by long version) if enabled in config
-        if self.config.markdown_short_heading_names and node.get("_toc_name"):
-            title.set_short_name(node.get("_toc_name", ""))
+        if self.config.markdown_short_heading_names:
+            heading = node.get("_toc_name")
+            heading = node.get("_toc_parts", "") if not heading else heading
+            title.set_short_name(heading)
 
         self._push_context(title)
 

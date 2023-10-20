@@ -14,5 +14,6 @@ def setup(app):
     app.add_config_value("markdown_anchor_sections", False, False)
     app.add_config_value("markdown_anchor_signatures", False, False)
     app.add_config_value("markdown_anchor_signatures_docusaurus", False, False)
-    app.add_config_value("markdown_short_heading_names", False, False)
     app.add_config_value("markdown_docinfo", False, False)
+    app.add_config_value("markdown_short_heading_names", False, False)
+    app.add_config_value("markdown_wrapper_class", "", False)
