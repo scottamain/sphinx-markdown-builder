@@ -316,7 +316,10 @@ class TitleContext(NoLineBreakContext):
         self.anchor = f" {{#{anchor}}}"
 
     def set_short_name(self, name: str):
-        self.short_name = name.split('.')[-1]
+        if not isinstance(name, str):
+            name = ' '.join(name)
+        if name:
+            self.short_name = name.split('.')[-1]
 
     @property
     def section_prefix(self):
