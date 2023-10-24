@@ -39,6 +39,7 @@ from sphinx_markdown_builder.contexts import (
     IndentContext,
     ItalicContext,
     ListMarker,
+    NoLineBreakContext,
     MetaContext,
     PushContext,
     StrongContext,
@@ -493,7 +494,10 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
     @pushing_context
     def visit_reference(self, node):
         url = self._fetch_ref_uri(node)
-        self._push_context(WrappedContext("[", f"]({url})"))
+        if isinstance(node.parent, nodes.literal_block):
+          self._push_context(NoLineBreakContext())
+        else:
+          self._push_context(WrappedContext("[", f"]({url})"))
 
     @pushing_context
     def visit_download_reference(self, node):
