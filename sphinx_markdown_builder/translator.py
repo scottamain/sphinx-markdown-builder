@@ -580,6 +580,8 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
 
     def visit_desc(self, node):
         self._push_status(desc_type=node.attributes.get("desctype", ""))
+        if "enumerator" in node.get("classes", None):
+            self._push_status(nested_member=True)
 
     def depart_desc(self, _node):
         self._pop_status()
@@ -591,7 +593,7 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
         # We don't want methods to be at the same level as classes,
         # If signature has a non-null class, that's means it is a signature
         # of a class method
-        h_level = 3 if node.get("class", None) else 2
+        h_level = 3 if node.get("class", None) or self.status.nested_member else 2
         title = TitleContext(h_level)
 
         # Insert HTML anchors if enabled by the config

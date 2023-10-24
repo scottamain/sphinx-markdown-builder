@@ -62,6 +62,7 @@ class ListMarker:
 @dataclass(frozen=True)
 class ContextStatus:
     escape_text: bool = True  # Whether to escape characters
+    nested_member: bool = False # Whether this member is nested in another
     section_level: int = 0  # Current section heading level
     list_marker: Optional[ListMarker] = None  # Current list marker
     desc_type: Optional[str] = None  # Current descriptor type
