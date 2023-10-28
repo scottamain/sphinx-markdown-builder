@@ -330,7 +330,7 @@ class TitleContext(NoLineBreakContext):
         content = super().make()
         assert len(content) > 0, "Empty title"
         if self.short_name:
-          return f"{self.section_prefix} {self.short_name}{self.anchor}\n\n" \
+          return f"{self.section_prefix} `{self.short_name}`{self.anchor}\n\n" \
                  f"> {content}\n\n"
         return f"{self.section_prefix} {content}{self.anchor}"
 
