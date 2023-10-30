@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 from docutils import languages, nodes
 from munch import munchify
 from sphinx.util.docutils import SphinxTranslator
+from docutils.nodes import target
 
 from sphinx_markdown_builder.contexts import (
     CommaSeparatedContext,
@@ -118,7 +119,6 @@ def pushing_context(method):
     assert state == "visit"
     setattr(method, "__pushing_context__", True)
     return method
-
 
 class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-methods
     def __init__(self, document: nodes.document, builder: "MarkdownBuilder"):
@@ -600,6 +600,9 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
         if self.config.markdown_anchor_signatures:
             for anchor in node.get("ids", []):
                 self._add_anchor(anchor)
+            # Also find any nested target tags
+            for t in node.findall(target):
+                self._add_anchor(t.get("ids", [])[0])
 
         # Insert Docusaurus-style MD anchors if enabled in config
         if self.config.markdown_anchor_signatures_docusaurus and node.get("ids", []):
