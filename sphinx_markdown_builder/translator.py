@@ -29,7 +29,7 @@ import yaml
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 from docutils import languages, nodes
-from munch import munchify
+from munch import Munch
 from sphinx.util.docutils import SphinxTranslator
 from docutils.nodes import target
 
@@ -269,14 +269,29 @@ class MarkdownTranslator(SphinxTranslator):  # pylint: disable=too-many-public-m
     ################################################################################
 
     def visit_document(self, node):
-        if self.config.markdown_wrapper_class:
-          variables = munchify({
-              'wrapper_class': self.config.markdown_wrapper_class
-          })
-          variables_yaml = yaml.safe_dump(variables)
-          frontmatter_ctx = SubContext()
-          frontmatter_ctx.add('---\n' + variables_yaml + '---\n\n')
-          self._push_context(frontmatter_ctx)
+        if not self.config.markdown_meta_front_matter:
+            return
+        props = Munch()
+
+        # Add the project config metadata
+        for key in DOC_INFO_FIELDS:
+            value = getattr(self.config, key, None)
+            if value and value != '':
+                props[key] = value
+
+        # Add any document metadata defined in the file:
+        # https://www.sphinx-doc.org/en/master/usage/restructuredtext/field-lists.html#file-wide-metadata
+        metadata = self.builder.env.metadata[self.builder.current_doc_name]
+        for key, value in metadata.items():
+            props[key] = value
+
+        if self.config.markdown_meta_wrapper_class:
+            props.wrapper_class = self.config.markdown_meta_wrapper_class
+
+        variables_yaml = yaml.safe_dump(props)
+        frontmatter_ctx = SubContext()
+        frontmatter_ctx.add('---\n' + variables_yaml + '---\n\n')
+        self._push_context(frontmatter_ctx)
 
     @pushing_context
     def visit_warning(self, _node):
